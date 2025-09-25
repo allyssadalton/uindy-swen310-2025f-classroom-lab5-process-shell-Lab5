@@ -1,0 +1,48 @@
+name: Autograding Tests
+'on':
+- push
+- repository_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: make_test
+      id: make_test
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: make_test
+        setup-command: ''
+        command: make test
+        timeout: 10
+        max-score: 20
+    - name: Use_pytest
+      id: use_pytest
+      uses: classroom-resources/autograding-python-grader@v1
+      with:
+        timeout: 10
+        max-score: 80
+        setup-command: pip install pytest
+    - name: make_done
+      id: make_done
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: make_done
+        setup-command: ''
+        command: make done
+        timeout: 10
+        max-score: 0
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        MAKE_TEST_RESULTS: "${{steps.make_test.outputs.result}}"
+        USE_PYTEST_RESULTS: "${{steps.use_pytest.outputs.result}}"
+        MAKE_DONE_RESULTS: "${{steps.make_done.outputs.result}}"
+      with:
+        runners: make_test,use_pytest,make_done
